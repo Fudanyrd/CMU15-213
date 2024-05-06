@@ -50,7 +50,7 @@ void printvisit(cache_visit *);
 // cache line
 typedef struct cache_line {
   short valid;         // valid bit
-  unsigned long tag;            // tag bits
+  unsigned long tag;   // tag bits
   unsigned long stamp; // maintain a time stamp.
 } cache_line;
 
@@ -78,10 +78,11 @@ void deal(cache *, cache_visit *, cache_stat *);
 int main(int argc, char **argv) {
 #ifdef DEBUG
 #ifndef static_assert
-#define static_assert(pred) switch(0) {\
-  case (0): \
-  case (pred): \
- }
+#define static_assert(pred)                                                    \
+  switch (0) {                                                                 \
+  case (0):                                                                    \
+  case (pred):                                                                 \
+  }
 #endif
   static_assert(sizeof(long) == 8U);
   static_assert(sizeof(int) == 4U);
@@ -155,7 +156,9 @@ int main(int argc, char **argv) {
       putchar(line[2]);
     }
     for (int i = 3; line[i] != ','; ++i) {
-      if (meta.verbose) { putchar(line[i]); }
+      if (meta.verbose) {
+        putchar(line[i]);
+      }
       addr <<= 4UL;
       addr |= (unsigned long)(line[i] < 'a' ? (line[i] - '0')
                                             : (line[i] - 'a' + 0xa));
@@ -168,7 +171,8 @@ int main(int argc, char **argv) {
     visit.s >>= (meta.t + meta.b);
     visit.tag_ = addr >> (meta.s + meta.b);
 
-#ifdef DEBUG  // if you want to debug the whole program, add -DDEBUG to compiler switches.
+#ifdef DEBUG // if you want to debug the whole program, add -DDEBUG to compiler
+             // switches.
     printf("addr is %lu\n", addr);
     printvisit(&visit);
     printf("\n");
@@ -179,7 +183,7 @@ int main(int argc, char **argv) {
     }
   }
 end:
-  
+
   print_stat(&stats);
   cache_release(&cache_);
   return 0;
@@ -199,14 +203,14 @@ void cache_set_release(cache_set *set) { free(set->lines_); }
 /**
  * @brief Find a empty line in the set, if full, evict and then get one!
  * The eviction will be recorded in statistics if happened.
- * @return the empty line id.  
+ * @return the empty line id.
  */
 unsigned fetch(cache_set *set, cache_stat *stat) {
   // implement LRU replacement policy
   unsigned long minstamp = 0xffffffffffffffffUL;
   unsigned idx = meta.E << 1U;
   for (unsigned i = 0; i < meta.E; ++i) {
-    if (!set->lines_[i].valid) {  // always use empty slot first!
+    if (!set->lines_[i].valid) { // always use empty slot first!
       idx = i;
       break;
     }
@@ -305,30 +309,31 @@ void cache_release(cache *ch) {
 }
 void deal(cache *ch, cache_visit *visit, cache_stat *stats) {
   assert(ch);
-  assert(visit);  // both must not be nullptr
+  assert(visit); // both must not be nullptr
 
   // find the set to investingate.
   assert(visit->s < ch->S);
   cache_set *set = ch->sets_ + visit->s;
   switch (visit->type_) {
-    case Load: {
-      deal_load(set, visit, stats);
-      stats->stamp_ += 1UL;
-      break;
-    }
-    case Store: {
-      deal_store(set, visit, stats);
-      stats->stamp_ += 1UL;
-      break;
-    }
-    case Modify: {
-      deal_load(set, visit, stats);
-      // should be treated as one visit.
-      deal_store(set, visit, stats);
-      stats->stamp_ += 1UL;
-      break;
-    }
-    default: assert(NULL);  // internal error, check your code:)
+  case Load: {
+    deal_load(set, visit, stats);
+    stats->stamp_ += 1UL;
+    break;
+  }
+  case Store: {
+    deal_store(set, visit, stats);
+    stats->stamp_ += 1UL;
+    break;
+  }
+  case Modify: {
+    deal_load(set, visit, stats);
+    // should be treated as one visit.
+    deal_store(set, visit, stats);
+    stats->stamp_ += 1UL;
+    break;
+  }
+  default:
+    assert(NULL); // internal error, check your code:)
   }
 }
 
