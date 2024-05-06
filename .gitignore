@@ -1,0 +1,8 @@
+# cache lab
+cache/csim
+cache/csim-ref
+cache/root-handin.tar
+cache/test-csim
+cache/test-trans
+cache/tracegen
+cache/*.o

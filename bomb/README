@@ -1,0 +1,36 @@
+This is an x86-64 bomb for self-study students. 
+
+# Answer
+## Phase 1
+> Border relations with Canada have never been better.
+
+Only this answer is correct.
+
+## Phase 2
+> 1 2 4 8 16 32
+
+Only this answer works.
+
+## Phase 3
+> 0 207
+
+This phase may have more than one codes...
+
+## Phase 4
+> 0 0
+
+This is only one of the feasible code.
+
+## Phase 5
+The code is 6-character long. And the lowest 4-bits of each character in ascii should be `9, 15, 14, 5, 6, 7`.
+Some of these strings:
+> ionefg
+> IONEFG
+> 9?>567
+
+or even this one:
+> )/.%&'
+
+## Phase 6
+I've tried all permutations of `1, 2, 3, 4, 5, 6` and found that only `4, 3, 2, 1, 6, 5` can defuse the bomb.
+(Of course I'd kidding... hahahaha...)
