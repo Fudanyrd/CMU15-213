@@ -184,6 +184,7 @@ int main(int argc, char **argv) {
   }
 end:
 
+  fclose(mem);
   print_stat(&stats);
   cache_release(&cache_);
   return 0;

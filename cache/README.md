@@ -18,3 +18,13 @@ Points (s,E,b)    Hits  Misses  Evicts    Hits  Misses  Evicts
 
 TEST_CSIM_RESULTS=27
 ```
+Memory errors(including leaks): None
+```
+==8127== 
+==8127== HEAP SUMMARY:
+==8127==     in use at exit: 0 bytes in 0 blocks
+==8127==   total heap usage: 38 allocs, 38 frees, 4,016 bytes allocated
+==8127== 
+==8127== All heap blocks were freed -- no leaks are possible
+```
+Note that `fopen` must be followed by `fclose`😇, else there will be memory leakages!
