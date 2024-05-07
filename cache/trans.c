@@ -92,11 +92,69 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
     }  else  {
         // 67 * 61 block.. what the hell is this😇
         // first take care of the 66 * 60, using 3 * 3 small blocks.
-        for (int i = 0; i < 66; i += 3) {
-            for (int j = 0; j < 60; j += 3) {
-
+        for (int i = 0; i < 64; i += 4) {
+            for (int j = 0; j < 60; j += 4) {
+                // move the data in block
+                for (int k = 0; k < 4; ++k) {
+                    v0 = A[i + k][j + 0];
+                    v1 = A[i + k][j + 1];
+                    v2 = A[i + k][j + 2];
+                    v3 = A[i + k][j + 3];
+                    B[j + k][i + 0] = v0;
+                    B[j + k][i + 1] = v1;
+                    B[j + k][i + 2] = v2;
+                    B[j + k][i + 3] = v3;
+                }
+                // in-place transpose the block:)
+                for (int k = 0; k < 4; ++k) {
+                    for (int l = 0; l < k; ++l) {
+                        v0 = B[j + k][i + l];
+                        B[j + k][i + l] = B[j + l][i + k];
+                        B[j + l][i + k] = v0;
+                    }
+                }
             }
         }
+
+        // move the bottom 3 rows of A:)
+        for (int j = 0; j < 60; j += 4) {
+            for (int k = 64; k < 67; ++k) {
+                v0 = A[k][j + 0];
+                v1 = A[k][j + 1];
+                v2 = A[k][j + 2];
+                v3 = A[k][j + 3];
+                B[j + 0][k] = v0;
+                B[j + 1][k] = v1;
+                B[j + 2][k] = v2;
+                B[j + 3][k] = v3;
+            }
+        }
+        // move the rightmost column of A:)
+        for (int i = 0; i < 64; i += 8) {
+            v0 = A[i + 0][60];
+            v1 = A[i + 1][60];
+            v2 = A[i + 2][60];
+            v3 = A[i + 3][60];
+            v4 = A[i + 4][60];
+            v5 = A[i + 5][60];
+            v6 = A[i + 6][60];
+            v7 = A[i + 7][60];
+            B[60][i + 0] = v0;
+            B[60][i + 1] = v1;
+            B[60][i + 2] = v2;
+            B[60][i + 3] = v3;
+            B[60][i + 4] = v4;
+            B[60][i + 5] = v5;
+            B[60][i + 6] = v6;
+            B[60][i + 7] = v7;
+        }
+        // move the last 3 entry at right-bottom:)
+        v0 = A[64][60];
+        v1 = A[65][60];
+        v2 = A[66][60];
+        B[60][64] = v0;
+        B[60][65] = v1;
+        B[60][66] = v2;
     }
 }
 
