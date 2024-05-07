@@ -21,7 +21,7 @@ Textbook *Computer System: A Programmer's Perspective*(a.k.a *csapp*)
   </tr>
   <tr>
     <td>Lab 5: Cache</td>
-    <td> 40%(cache simulator) </td>
+    <td> 70% </td>
     <td> C, cache basic </td>
     <td> 😇😇😇😇😇</td>
   </tr>

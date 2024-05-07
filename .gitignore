@@ -1,8 +1,13 @@
 # cache lab
+cache/.csim_results
+cache/.marker
 cache/csim
 cache/csim-ref
 cache/root-handin.tar
 cache/test-csim
 cache/test-trans
+cache/trace.f0
+cache/trace.f1
+cache/trace.tmp
 cache/tracegen
 cache/*.o
