@@ -28,3 +28,31 @@ Memory errors(including leaks): None
 ==8127== All heap blocks were freed -- no leaks are possible
 ```
 Note that `fopen` must be followed by `fclose`😇, else there will be memory leakages!
+
+## Transpose Matrix
+<table>
+  <tr>
+    <td> Test Case </td>
+    <td> Misses</td>
+    <td> Score </td>
+    <td> Max Score </td>
+  </tr>
+  <tr>
+    <td> 32x32 </td>
+    <td> 260 </td>
+    <td style="color:green"> 8 </td>
+    <td> 8 </td>
+  </tr>
+  <tr>
+    <td> 64x64 </td>
+    <td> 1604 </td>
+    <td style="color:red"> 4.5 </td>
+    <td> 8 </td>
+  </tr>
+  <tr>
+    <td> 67x61 </td>
+    <td> 2314</td>
+    <td style="color:red"> 6.9 </td>
+    <td> 10 </td>
+  </tr>
+</table>

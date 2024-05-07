@@ -1,3 +1,6 @@
+# utility
+.vscode
+
 # cache lab
 cache/.csim_results
 cache/.marker
