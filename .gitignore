@@ -17,3 +17,4 @@ cache/*.o
 
 # malloc lab
 malloc/*.o
+malloc/mdriver
