@@ -14,3 +14,6 @@ cache/trace.f1
 cache/trace.tmp
 cache/tracegen
 cache/*.o
+
+# malloc lab
+malloc/*.o
