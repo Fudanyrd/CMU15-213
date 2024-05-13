@@ -203,7 +203,7 @@ void *mm_malloc(size_t size) {
         return get_adr(res, METASZ);
       }
       // woa, need to allocate new heap page:)
-      void *new_page = alloc_page(1U + (actual - 1U) / 4096U);
+      void *new_page = alloc_page(1U + (actual + METASZ - 1U) / mem_pagesize());
       if (new_page == MMEOL) { return MMEOL; }
       take(new_page, actual);
       return get_adr(new_page, METASZ);
@@ -232,6 +232,15 @@ void *mm_malloc_naive(size_t size) {
  * @brief Free the pointer allocated by mm_malloc.
  */
 void mm_free(void *ptr) {
+  if (!static_cast(ptr, int)) { return; }
+  // findout the size of it.
+  void *node = static_cast(static_cast(ptr, char *) - METASZ, void *);
+  size_t *meta = static_cast(node, size_t *);
+#ifdef DEBUG
+  assert((meta[0] & 0x7) == 0);
+#endif
+  // add it to the free list.
+  push_front(node);
 }
 
 /*
