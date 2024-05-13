@@ -89,6 +89,12 @@ inline void *get_adr(void *pt, size_t bias) {
   return static_cast(static_cast(pt, char *) + bias, void *);
 }
 
+/**
+ * @brief allocate new page by growing heap pointer. Set its meta.
+ * @return the head of allocated page
+ */
+void *alloc_page(size_t num_page);
+
 /* 
  * mm_init - initialize the malloc package.
  */
@@ -105,19 +111,11 @@ int mm_init(void) {
   assert(init_sz - METASZ > 1024U);
   assert((init_sz & 0x7) == 0);
 #endif
-  if (mem_sbrk(mem_pagesize() * 2) == (void *)-1) {
+  mm_large = alloc_page(2);
+  if (!static_cast(mm_large, int)) {
     // initial allocation failure?! Impossible!
     return -1;
   }
-  mm_large = mem_heap_lo();
-  // build meta for the page.
-  size_t *meta = static_cast(mm_large, size_t *);
-  // size of the block
-  meta[0] = init_sz - METASZ;
-  // prev pointer
-  meta[1] = static_cast(MMEOL, size_t);
-  // successor pointer
-  meta[2] = static_cast(MMEOL, size_t);
 
   return 0;
 }
@@ -140,12 +138,6 @@ void *find_fit(void *head, size_t size);
  * @param aligned size needed to allocate
  */
 void take(void *node, size_t aligned);
-
-/**
- * @brief allocate new page by growing heap pointer. Set its meta.
- * @return the head of allocated page
- */
-void *alloc_page(size_t num_page);
 
 void *mm_malloc(size_t size) {
   // actual space needed.
@@ -239,13 +231,25 @@ void *mm_malloc_naive(size_t size) {
 /**
  * @brief Free the pointer allocated by mm_malloc.
  */
-void mm_free(void *ptr) {}
+void mm_free(void *ptr) {
+}
 
 /*
  * mm_free - Freeing a block does nothing.
  */
 
-void mm_free_naive(void *ptr) {}
+void mm_free_naive(void *ptr) {
+
+  if (!static_cast(ptr, int)) { return; }
+  // findout the size of it.
+  void *node = static_cast(static_cast(ptr, char *) - METASZ, void *);
+  size_t *meta = static_cast(node, size_t *);
+#ifdef DEBUG
+  assert((meta[0] & 0x7) == 0);
+#endif
+  // add it to the free list.
+  push_front(node);
+}
 
 /*
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
@@ -306,8 +310,6 @@ void take(void *node, size_t aligned) {
   size_t left = meta[0] - aligned;
   void *predecessor = static_cast(meta[1], void *);
   void *successor = static_cast(meta[2], void *);
-  // too small; don't care.
-  if (left < 16U + METASZ) {
     // evict the node from the free list; allocate all of it.
     if (predecessor != MMEOL) {
       size_t *pred_meta = static_cast(predecessor, size_t *);
@@ -315,12 +317,23 @@ void take(void *node, size_t aligned) {
     }
     if (successor != MMEOL) {
       size_t *succ_meta = static_cast(successor, size_t *);
-      succ_meta[2] = static_cast(predecessor, size_t);
+      succ_meta[1] = static_cast(predecessor, size_t);
     }
+    if (node == mm_small) {
+      mm_small = successor;
+    }
+    if (node == mm_middle) {
+      mm_middle = successor;
+    }
+    if (node == mm_large) {
+      mm_large = successor;
+    }
+  // too small; don't care.
+  if (left < 16U + METASZ) {
   } else {
     // the left size is still large, split the node instead.
-    meta[0] = METASZ + aligned;
-    void *splitted = get_adr(node, meta[0]);
+    meta[0] = aligned;
+    void *splitted = get_adr(node, METASZ + aligned);
     meta = static_cast(splitted, size_t *);
     meta[0] = left - METASZ; // at least 16.
     push_front(splitted);
@@ -330,16 +343,32 @@ void take(void *node, size_t aligned) {
 
 void push_front(void *node) {
   size_t *meta = static_cast(node, size_t *);
+  size_t *head_meta;
+#ifdef DEBUG
+  assert((meta[0] & 0x7) == 0);
+#endif
   meta[1] = static_cast(MMEOL, size_t);
   if (meta[0] < 32U) {
     meta[2] = static_cast(mm_small, size_t);
+    if (static_cast(mm_small, int)) {
+      head_meta = static_cast(mm_small, size_t *);
+      head_meta[1] = static_cast(node, size_t);
+    }
     mm_small = node;
   } else {
     if (meta[0] < 1024U) {
       meta[2] = static_cast(mm_middle, size_t);
+      if (static_cast(mm_middle, int)) {
+        head_meta = static_cast(mm_middle, size_t *);
+        head_meta[1] = static_cast(node, size_t);
+      }
       mm_middle = node;
     } else {
       meta[2] = static_cast(mm_large, size_t);
+      if (static_cast(mm_large, int)) {
+        head_meta = static_cast(mm_large, size_t *);
+        head_meta[1] = static_cast(node, size_t);
+      }
       mm_large = node;
     }
   }
@@ -355,8 +384,11 @@ void *alloc_page(size_t num_page) {
     return MMEOL;
   }
   size_t *meta = static_cast(node, size_t *);
+#ifdef DEBUG
+  assert(num_page * mem_pagesize() >= METASZ);
+#endif
   meta[0] = num_page * mem_pagesize() - METASZ;
-  meta[1] = meta[2] = 0;
+  meta[1] = meta[2] = static_cast(MMEOL, size_t);
 
   return node;
 }

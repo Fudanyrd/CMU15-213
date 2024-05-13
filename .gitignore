@@ -18,3 +18,4 @@ cache/*.o
 # malloc lab
 malloc/*.o
 malloc/mdriver
+malloc/silly.rep
