@@ -1,6 +1,6 @@
 /*
  * mm-naive.c - The fastest, least memory-efficient malloc package.
- * 
+ *
  * In this naive approach, a block is allocated by simply incrementing
  * the brk pointer.  A block is pure payload. There are no headers or
  * footers.  Blocks are never coalesced or reused. Realloc is
@@ -9,14 +9,14 @@
  * NOTE TO STUDENTS: Replace this header comment with your own header
  * comment that gives a high level description of your solution.
  */
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
-#include "mm.h"
 #include "memlib.h"
+#include "mm.h"
 
 /*********************************************************
  * NOTE TO STUDENTS: Before you do anything else, please
@@ -32,58 +32,59 @@ team_t team = {
     /* Second member's full name (leave blank if none) */
     "",
     /* Second member's email address (leave blank if none) */
-    ""
-};
+    ""};
 
 /* single word (4) or double word (8) alignment */
 #define ALIGNMENT 8
 
 /* rounds up to the nearest multiple of ALIGNMENT */
-#define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~0x7)
-
+#define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~0x7)
 
 #define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
 
 /**
  * In my Implementation I built 3 free list:
- *  1. small free blocks(smaller than 32 bytes) 
+ *  1. small free blocks(smaller than 32 bytes)
  *  2. middle free blocks(no less than 32 bytes, less than 1024 bytes)
  *  3. large free blocks(larger than 1024 bytes)
  * All the three list is doubly linked, the meta of each node is as follows:
  * [size(61 bit) | used(3 bit) | prev(64 bit) | succ(64 bit) ]
- * 
+ *
  * We first allocate 2 pages for the heap area, then give the space to
- * initialize large free list. 
+ * initialize large free list.
  */
 
-/** free list of small(<= 32) blocks */ 
+/** free list of small(<= 32) blocks */
 void *mm_small;
-/** free list of middle(32, 1024) blocks */ 
+/** free list of middle(32, 1024) blocks */
 void *mm_middle;
-/** free list of large(>= 1024) blocks */ 
+/** free list of large(>= 1024) blocks */
 void *mm_large;
 
-/** 
- * put a node to the front of either mm_small, mm_middle or mm_large(based on size) 
+/**
+ * put a node to the front of either mm_small, mm_middle or mm_large(based on
+ * size)
  */
 void push_front(void *);
 
 /** End of (free) List */
-#define MMEOL ((void *) 0)
+#define MMEOL ((void *)0)
 /** Size of node meta */
 #define METASZ (ALIGN(sizeof(size_t) * 3))
 /** C stype casting is ugly */
-#define static_cast(a, tp) ((tp) (a))
+#define static_cast(a, tp) ((tp)(a))
 #include <assert.h>
 
 #ifndef static_assert
-#define static_assert(pred) switch (0) {\
-    case (0): case (pred): \
+#define static_assert(pred)                                                    \
+  switch (0) {                                                                 \
+  case (0):                                                                    \
+  case (pred):                                                                 \
   }
 #endif
 
 /**
- * @return the biased pointer. 
+ * @return the biased pointer.
  */
 inline void *get_adr(void *pt, size_t bias) {
   return static_cast(static_cast(pt, char *) + bias, void *);
@@ -95,7 +96,7 @@ inline void *get_adr(void *pt, size_t bias) {
  */
 void *alloc_page(size_t num_page);
 
-/* 
+/*
  * mm_init - initialize the malloc package.
  */
 int mm_init(void) {
@@ -125,15 +126,15 @@ int mm_init(void) {
  * find the **first** block that has a larger volume than size.
  * @param head head of the list to look into.
  * @param size size of block to fit.
- * 
+ *
  * @return MMEOL is failed to find any.
  */
-void *find_fit(void *head, size_t size); 
+void *find_fit(void *head, size_t size);
 
 /**
  * @brief take the vacancy of a node and set its successor and size properly.
  * If nessesary, add the remnent to one of the 3 free lists.
- * 
+ *
  * @param node the pointer to the node to take from
  * @param aligned size needed to allocate
  */
@@ -141,14 +142,16 @@ void take(void *node, size_t aligned);
 
 void *mm_malloc(size_t size) {
   // actual space needed.
-  if (size == 0U) { return MMEOL; }
+  if (size == 0U) {
+    return MMEOL;
+  }
   const size_t actual = ALIGN(size);
   void *res = MMEOL;
   if (actual < 32U) {
     // first look into mm_small.
     res = find_fit(mm_small, actual);
     // find!
-    if (static_cast(res, int)) { 
+    if (static_cast(res, int)) {
       take(res, actual);
       return get_adr(res, METASZ);
     }
@@ -171,7 +174,9 @@ void *mm_malloc(size_t size) {
 
     // woa, need to allocate new heap page:)
     void *new_page = alloc_page(1U);
-    if (new_page == MMEOL) { return MMEOL; }
+    if (new_page == MMEOL) {
+      return MMEOL;
+    }
     take(new_page, actual);
     return get_adr(new_page, METASZ);
   } else {
@@ -191,7 +196,9 @@ void *mm_malloc(size_t size) {
       }
       // woa, need to allocate new heap page:)
       void *new_page = alloc_page(1U);
-      if (new_page == MMEOL) { return MMEOL; }
+      if (new_page == MMEOL) {
+        return MMEOL;
+      }
       take(new_page, actual);
       return get_adr(new_page, METASZ);
 
@@ -204,7 +211,9 @@ void *mm_malloc(size_t size) {
       }
       // woa, need to allocate new heap page:)
       void *new_page = alloc_page(1U + (actual + METASZ - 1U) / mem_pagesize());
-      if (new_page == MMEOL) { return MMEOL; }
+      if (new_page == MMEOL) {
+        return MMEOL;
+      }
       take(new_page, actual);
       return get_adr(new_page, METASZ);
     }
@@ -213,26 +222,28 @@ void *mm_malloc(size_t size) {
   return MMEOL;
 }
 
-/* 
+/*
  * mm_malloc - Allocate a block by incrementing the brk pointer.
  *     Always allocate a block whose size is a multiple of the alignment.
  */
 void *mm_malloc_naive(size_t size) {
-    int newsize = ALIGN(size + SIZE_T_SIZE);
-    void *p = mem_sbrk(newsize);
-    if (p == (void *)-1)
-	return NULL;
-    else {
-        *(size_t *)p = size;
-        return (void *)((char *)p + SIZE_T_SIZE);
-    }
+  int newsize = ALIGN(size + SIZE_T_SIZE);
+  void *p = mem_sbrk(newsize);
+  if (p == (void *)-1)
+    return NULL;
+  else {
+    *(size_t *)p = size;
+    return (void *)((char *)p + SIZE_T_SIZE);
+  }
 }
 
 /**
  * @brief Free the pointer allocated by mm_malloc.
  */
 void mm_free(void *ptr) {
-  if (!static_cast(ptr, int)) { return; }
+  if (!static_cast(ptr, int)) {
+    return;
+  }
   // findout the size of it.
   void *node = static_cast(static_cast(ptr, char *) - METASZ, void *);
   size_t *meta = static_cast(node, size_t *);
@@ -249,7 +260,9 @@ void mm_free(void *ptr) {
 
 void mm_free_naive(void *ptr) {
 
-  if (!static_cast(ptr, int)) { return; }
+  if (!static_cast(ptr, int)) {
+    return;
+  }
   // findout the size of it.
   void *node = static_cast(static_cast(ptr, char *) - METASZ, void *);
   size_t *meta = static_cast(node, size_t *);
@@ -263,28 +276,29 @@ void mm_free_naive(void *ptr) {
 /*
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
  */
-void *mm_realloc(void *ptr, size_t size)
-{
-    void *oldptr = ptr;
-    void *newptr;
-    size_t copySize;
-    
-    newptr = mm_malloc(size);
-    if (newptr == NULL)
-      return NULL;
-    copySize = *(size_t *)((char *)oldptr - SIZE_T_SIZE);
-    if (size < copySize)
-      copySize = size;
-    memcpy(newptr, oldptr, copySize);
-    mm_free(oldptr);
-    return newptr;
+void *mm_realloc(void *ptr, size_t size) {
+  void *oldptr = ptr;
+  void *newptr;
+  size_t copySize;
+
+  newptr = mm_malloc(size);
+  if (newptr == NULL)
+    return NULL;
+  copySize = *(size_t *)((char *)oldptr - SIZE_T_SIZE);
+  if (size < copySize)
+    copySize = size;
+  memcpy(newptr, oldptr, copySize);
+  mm_free(oldptr);
+  return newptr;
 }
 
 /************************************************
  * HELPER FUNCTIONS
  ************************************************/
 void *find_fit(void *head, size_t size) {
-  if (head == MMEOL) { return MMEOL; }
+  if (head == MMEOL) {
+    return MMEOL;
+  }
   // iterator over the whole free list.
   void *it = head;
   size_t *meta;
@@ -308,7 +322,7 @@ void *find_fit(void *head, size_t size) {
 
 void take(void *node, size_t aligned) {
   size_t *meta = static_cast(node, size_t *);
-#ifdef DEBUG  // will only be run in debug mode.
+#ifdef DEBUG // will only be run in debug mode.
   // make sure the size is aligned.
   assert((aligned & 0x7) == 0);
   // make sure the node is empty.
@@ -319,24 +333,24 @@ void take(void *node, size_t aligned) {
   size_t left = meta[0] - aligned;
   void *predecessor = static_cast(meta[1], void *);
   void *successor = static_cast(meta[2], void *);
-    // evict the node from the free list; allocate all of it.
-    if (predecessor != MMEOL) {
-      size_t *pred_meta = static_cast(predecessor, size_t *);
-      pred_meta[2] = static_cast(successor, size_t);
-    }
-    if (successor != MMEOL) {
-      size_t *succ_meta = static_cast(successor, size_t *);
-      succ_meta[1] = static_cast(predecessor, size_t);
-    }
-    if (node == mm_small) {
-      mm_small = successor;
-    }
-    if (node == mm_middle) {
-      mm_middle = successor;
-    }
-    if (node == mm_large) {
-      mm_large = successor;
-    }
+  // evict the node from the free list; allocate all of it.
+  if (predecessor != MMEOL) {
+    size_t *pred_meta = static_cast(predecessor, size_t *);
+    pred_meta[2] = static_cast(successor, size_t);
+  }
+  if (successor != MMEOL) {
+    size_t *succ_meta = static_cast(successor, size_t *);
+    succ_meta[1] = static_cast(predecessor, size_t);
+  }
+  if (node == mm_small) {
+    mm_small = successor;
+  }
+  if (node == mm_middle) {
+    mm_middle = successor;
+  }
+  if (node == mm_large) {
+    mm_large = successor;
+  }
   // too small; don't care.
   if (left < 16U + METASZ) {
   } else {
@@ -348,7 +362,6 @@ void take(void *node, size_t aligned) {
     push_front(splitted);
   }
 }
-
 
 void push_front(void *node) {
   size_t *meta = static_cast(node, size_t *);
@@ -389,7 +402,7 @@ void *alloc_page(size_t num_page) {
     return MMEOL;
   }
   void *node = mem_sbrk(num_page * mem_pagesize());
-  if (node == (void *) -1) {
+  if (node == (void *)-1) {
     return MMEOL;
   }
   size_t *meta = static_cast(node, size_t *);
@@ -401,5 +414,3 @@ void *alloc_page(size_t num_page) {
 
   return node;
 }
-
-
