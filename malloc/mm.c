@@ -160,6 +160,24 @@ int grow_heap(size_t bytes);
  */
 void add_free_blk(void *);
 
+/**
+ * @brief remove a node from the free list.
+ */
+void remove_free_blk(void *blk);
+
+/**
+ * @brief merge two free block
+ * @param left block with lower address
+ * @param right block with higher address
+ * 
+ * NOTE: left, right must be neighbors(will be checked in debug mode) and 
+ * address of left must be lower than right! Don't worry about their size.
+ * 
+ * NOTE: this function will not add merged block(available in left) into free list
+ * instead, you should manually do so.
+ */
+void merge_blk(void *left, void *right);
+
 /*
  * mm_init - initialize the malloc package.
  */
@@ -170,7 +188,8 @@ int mm_init(void) {
   // initialize first(also last) large block.
   size_t init_size = 2 * mem_pagesize();
   mm_large = mem_sbrk(init_size);
-  assert(mm_large != NULL && mm_large != end_blk);
+  // assert(mm_large != NULL && mm_large != end_blk);
+  assert(mm_large != NULL);
   if (mm_large == (void *)-1) {
     // oops, fail
     return -1;
@@ -288,7 +307,41 @@ void *mm_malloc(size_t size) {
 /*
  * mm_free - Freeing a block does nothing.
  */
-void mm_free(void *ptr) {}
+void mm_free(void *ptr) {
+  if (ptr == NULL || ptr == (void *)(-1)) { return; }
+  void *blk = ptr - used_meta_sz();
+  struct free_meta *meta = static_cast(blk, struct free_meta *);
+#ifdef DEBUG
+  // make sure that you're not freeing a block that is free.
+  // printf("%u %u \n", meta->size_, meta->last_);
+  assert((meta->size_ & 0x7) != 0);
+#endif
+  // mark as free block.
+  meta->size_ = meta->size_ & (~0x7);
+  // meta of front block in the heap.
+  struct free_meta *last_meta = static_cast(meta->last_, struct free_meta *);
+  // meta of next block in the heap.
+  struct free_meta *next_meta = blk == end_blk ? MMEOL :
+    static_cast(blk + meta->size_, struct free_meta *);
+
+  // result block(to be added to free list)
+  void *res = blk;
+  if (next_meta != MMEOL && (next_meta->size_ & 0x7) == 0) {
+    // next block is not null and free! you should merge them.
+    remove_free_blk(static_cast(next_meta, void *));
+    merge_blk(blk, static_cast(next_meta, void *));
+  }
+  
+  if (last_meta != MMEOL && (last_meta->size_ & 0x7) == 0) {
+    // last block is not null and free! you should merge them.
+    remove_free_blk(static_cast(last_meta, void *));
+    merge_blk(static_cast(last_meta, void *), blk);
+    res = static_cast(last_meta, void *);
+  }
+
+  add_free_blk(res);
+  check();
+}
 
 /*
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
@@ -361,6 +414,7 @@ void take(void *node, size_t aligned) {
    */
   struct free_meta *predecessor = static_cast(meta->pred_, struct free_meta *);
   struct free_meta *successor = static_cast(meta->succ_, struct free_meta *);
+  struct free_meta *third = static_cast(node + meta->size_, struct free_meta *);
   // evict off the free list(won't affect end_blk)
   if (predecessor != NULL) {
     predecessor->succ_ = static_cast(successor, size_t);
@@ -380,6 +434,10 @@ void take(void *node, size_t aligned) {
 
   size_t remain = meta->size_ - aligned - used_meta_sz();
   meta->size_ |= 0x1;
+
+#ifdef DEBUG
+  assert((meta->size_ & 0x7) != 0);
+#endif
   meta->pred_ = meta->succ_ = 0;
   if (remain < free_meta_sz() + MINVOL) {
     // too small, don't mind. have to allocate all of them to the request.
@@ -389,6 +447,7 @@ void take(void *node, size_t aligned) {
 
   // set the size of meta; mark as used.
   meta->size_ = aligned + used_meta_sz();
+  meta->size_ |= 0x1;
   // rest of the block(free)
   void *rest = node + (aligned + used_meta_sz());
   struct free_meta *rest_meta = static_cast(rest, struct free_meta *);
@@ -401,6 +460,9 @@ void take(void *node, size_t aligned) {
   #ifdef DEBUG
     assert(end_blk + rest_meta->size_ == mem_heap_hi() + 1);
   #endif
+  } else {
+    // should set the pointer of the third node!
+    third->last_ = static_cast(rest, size_t);
   }
   // add_free_blk will handle its predecessor and successor.
   add_free_blk(rest);
@@ -485,9 +547,12 @@ int grow_heap(size_t bytes) {
 }
 
 /**
+ * @param min_sz minimal size of block in the free list
+ * @param max_sz maximal size of block in the free list
  * @return non zero if the free list is inconsistent
  */
-int check_free_lst(void *head, const char *lst_name) {
+int check_free_lst(void *head, const char *lst_name, size_t min_sz, size_t max_sz) {
+  min_sz += free_meta_sz(); max_sz += free_meta_sz();
   if (head == NULL) { return 0; }
   void *it1 = head;
   struct free_meta *m1 = static_cast(it1, struct free_meta *);
@@ -499,6 +564,10 @@ int check_free_lst(void *head, const char *lst_name) {
     fprintf(stderr, "In %s: first node's not free\n", lst_name);
     return -1;
   }
+  if (m1->size_ >= max_sz || m1->size_ < min_sz) {
+    fprintf(stderr, "In %s, got a block that has size %ul, expected in range (%ul, %ul).\n", lst_name, m1->size_, min_sz, max_sz);
+    return -1;
+  }
   void *it2 = static_cast(m1->succ_, void *);
   struct free_meta *m2 = static_cast(it2, struct free_meta *);
 
@@ -506,6 +575,11 @@ int check_free_lst(void *head, const char *lst_name) {
     // check prev, succ link.
     if ((m2->size_ & 0x7) != 0) {
       fprintf(stderr, "In %s, have non-free block\n", lst_name);
+      return -1;
+    }
+
+    if (m2->size_ >= max_sz || m2->size_ < min_sz) {
+      fprintf(stderr, "In %s, got a block that has size %ul, expected in range (%ul, %ul).\n", lst_name, m2->size_, min_sz, max_sz);
       return -1;
     }
 
@@ -538,14 +612,81 @@ int mm_check() {
   }
 
   // check rule 1: the free list is consistent
-  res = check_free_lst(mm_small, "mm_small");
+  res = check_free_lst(mm_small, "mm_small", 0, 32U);
   if (res != 0) { goto bad; }
-  res = check_free_lst(mm_middle, "mm_middle");
+  res = check_free_lst(mm_middle, "mm_middle", 32U, 1024U);
   if (res != 0) { goto bad; }
-  res = check_free_lst(mm_large, "mm_large");
+  res = check_free_lst(mm_large, "mm_large", 1024U, static_cast(-1, size_t) - free_meta_sz());
   if (res != 0) { goto bad; }
 
   return 0;
 bad:
   return -1;
 }
+
+// again, won't affect end_blk! Don't worry~
+void remove_free_blk(void *blk) {
+  struct free_meta *meta = static_cast(blk, struct free_meta *);
+#ifdef DEBUG
+  // is the node null?
+  assert(blk != MMEOL);
+  // is the node free?
+  assert((meta->size_ & 0x7) == 0);
+#endif
+  struct free_meta *pred_meta = static_cast(meta->pred_, struct free_meta *);
+  struct free_meta *succ_meta = static_cast(meta->succ_, struct free_meta *);
+  if (pred_meta != NULL) {
+    pred_meta->succ_ = static_cast(succ_meta, size_t);
+  }
+  if (succ_meta != NULL) {
+    succ_meta->pred_ = static_cast(pred_meta, size_t);
+  }
+  
+  // what is blk is one of the mm_small, mm_middle, mm_large?
+  if (blk == mm_small) {
+    mm_small = static_cast(succ_meta, void *);
+  }
+  if (blk == mm_middle) {
+    mm_middle = static_cast(succ_meta, void *);
+  }
+  if (blk == mm_large) {
+    mm_large = static_cast(succ_meta, void *);
+  }
+
+  // remove the tag associated with meta.
+  meta->succ_ = meta->pred_ = 0;
+}
+
+void merge_blk(void *left, void *right) {
+  struct free_meta *left_mt = static_cast(left, struct free_meta*);
+  struct free_meta *right_mt = static_cast(right, struct free_meta *);
+#ifdef DEBUG
+  // is left and right not null?
+  assert(left != NULL && right != NULL);
+  // is left and right free?
+  assert((left_mt->size_ & 0x7) == 0);
+  assert((right_mt->size_ & 0x7) == 0);
+  // is left adjacent to right?
+  assert(right_mt->last_ == static_cast(left, size_t));
+  assert(left + left_mt->size_ == right);
+#endif
+  assert(left != end_blk);
+  struct free_meta *third_mt = static_cast(right + right_mt->size_, struct free_meta *);
+  if (right != end_blk) {
+    // must change the last of third.
+    third_mt->last_ = static_cast(left, size_t);
+  } else {
+    // set end_blk to be left.
+    end_blk = left;
+  }
+  left_mt->size_ += right_mt->size_;
+}
+
+/**
+ * One more thing, as a kind reminder:
+ * DON'T be confused by #ifdef DEBUG ... #endif
+ * 
+ * If you compile with switch -DDEBUG, these code will be executed to ensure correctness.
+ * When you are pretty sure that your code is correct, you can safely compile without -DDEBUG,
+ * and those code snippets between #ifdef and #endif will not be compiled at all.
+ */
