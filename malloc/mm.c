@@ -230,7 +230,7 @@ void *mm_malloc(size_t size) {
   if (size == 0) {
     return NULL;
   }
-  const size_t actual = ALIGN(size);
+  const size_t actual = ALIGN(size) >= free_meta_sz() ? ALIGN(size) : free_meta_sz();
 
   // look up the free list by size
   void * res;
@@ -477,7 +477,7 @@ void add_free_blk(void *blk) {
   assert(blk != NULL);
   assert((meta->size_ & 0x7) == 0);
   // meta's size is larger than the block?? Impossible!
-  assert(meta->size_ >= free_meta_sz() + MINVOL);
+  assert(meta->size_ >= free_meta_sz());
 #endif
   meta->pred_ = 0;
   if (meta->size_ - free_meta_sz() < 32U) {
