@@ -508,6 +508,7 @@ void add_free_blk(void *blk) {
 }
 
 int grow_heap(size_t bytes) {
+  if (bytes == 0) { return 0; }
 #ifdef DEBUG
   // test bytes is aligned.
   assert((bytes & 0x7) == 0);

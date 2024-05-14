@@ -6,7 +6,9 @@ VERSION = 1
 HANDINDIR = /afs/cs.cmu.edu/academic/class/15213-f01/malloclab/handin
 
 CC = gcc
-CFLAGS = -Wall -O2 -m32 -DDEBUG -Werror
+# warning: you may use "-DDEBUG" to check heap consistency,
+# but by doing so run time will suffer(you'll get lower score for it)!
+CFLAGS = -Wall -O2 -m32 -g -DDEBUG # -Werror 
 
 OBJS = mdriver.o mm.o memlib.o fsecs.o fcyc.o clock.o ftimer.o
 

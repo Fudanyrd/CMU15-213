@@ -1,15 +1,15 @@
-#####################################################################
 # CS:APP Malloc Lab
-# Handout files for students
-#
-# Copyright (c) 2002, R. Bryant and D. O'Hallaron, All rights reserved.
-# May not be used, modified, or copied without permission.
-#
-######################################################################
+ Handout files for students
 
-***********
-Main Files:
-***********
+```
+ Copyright (c) 2002, R. Bryant and D. O'Hallaron, All rights reserved.
+ May not be used, modified, or copied without permission.
+```
+
+
+<!--***********-->
+# Main Files:
+<!--***********-->
 
 mm.{c,h}	
 	Your solution malloc package. mm.c is the file that you
@@ -24,9 +24,9 @@ short{1,2}-bal.rep
 Makefile	
 	Builds the driver
 
-**********************************
-Other support files for the driver
-**********************************
+<!--**********************************-->
+# Other support files for the driver
+<!--**********************************-->
 
 config.h	Configures the malloc lab driver
 fsecs.{c,h}	Wrapper function for the different timer packages
@@ -50,3 +50,63 @@ To get a list of the driver flags:
 
 	unix> mdriver -h
 
+
+# Performance of my solution
+```
+unix> ./runtest.sh
+./runtest.sh: line 1: tests: command not found
+Running test amptjp-bal.rep... 
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 54 (util) + 40 (thru) = 94/100
+ 
+Running test binary-bal.rep... 
+Team Name:fdyrd
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 33 (util) + 40 (thru) = 73/100
+ 
+Running test binary2-bal.rep... 
+Team Name:fdyrd
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 31 (util) + 40 (thru) = 71/100
+ 
+Running test cccp-bal.rep... 
+Team Name:fdyrd
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 56 (util) + 40 (thru) = 96/100
+ 
+Running test coalescing-bal.rep... 
+Team Name:fdyrd
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 60 (util) + 40 (thru) = 100/100
+ 
+Running test cp-decl-bal.rep... 
+Team Name:fdyrd
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 57 (util) + 40 (thru) = 97/100
+ 
+Running test expr-bal.rep... 
+Team Name:fdyrd
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 58 (util) + 40 (thru) = 98/100
+ 
+Running test random-bal.rep... 
+Team Name:fdyrd
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 53 (util) + 40 (thru) = 93/100
+ 
+Running test random2-bal.rep... 
+Team Name:fdyrd
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 51 (util) + 40 (thru) = 91/100
+
+Running test realloc-bal.rep...
+Team Name:fdyrd
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 20 (util) + 29 (thru) = 49/100
+
+Running test realloc2-bal.rep...
+Team Name:fdyrd
+Member 1 :Rundong Yang:yangrundong7@gmail.com
+Perf index = 23 (util) + 40 (thru) = 63/100
+```
+Average performance score: `84.1`

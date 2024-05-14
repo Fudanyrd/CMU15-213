@@ -27,7 +27,7 @@ Textbook *Computer System: A Programmer's Perspective*(a.k.a *csapp*)
   </tr>
   <tr>
     <td>Lab 5: Malloc</td>
-    <td> 0% </td>
+    <td> 84% </td>
     <td> C, virtual memory</td>
     <td> 😇😇😇😇😇😇😇</td>
   </tr>
@@ -44,6 +44,8 @@ understanding of how **priciples of locality** can lead to better performances.
 ## Lab7: Malloc
 The worst choice I have ever made: using `simple segregated allocator`! This fails a lot of tests. Later I should
 implement `segregated allocator` instead.
+
+Currently I can only get up to `84` scores(100 total) for the record. This lab is hard and need constant work😇😇...
 
 # Why did I take this course
 I want to further my understanding of Computer System and learn x86 assembly as well.
