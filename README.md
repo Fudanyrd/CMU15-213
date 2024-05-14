@@ -46,6 +46,7 @@ The worst choice I have ever made: using `simple segregated allocator`! This fai
 implement `segregated allocator` instead.
 
 Currently I can only get up to `84` scores(100 total) for the record. This lab is hard and need constant work😇😇...
+Pull requests welcome if you can provide a better solution.
 
 # Why did I take this course
 I want to further my understanding of Computer System and learn x86 assembly as well.
