@@ -25,6 +25,7 @@ Textbook *Computer System: A Programmer's Perspective*(a.k.a *csapp*)
     <td> C, cache basic </td>
     <td> 😇😇😇😇😇</td>
   </tr>
+  <!--/snap/bin/valgrind your-executable -->
   <tr>
     <td>Lab 9: Shell</td>
     <td> 0% </td>

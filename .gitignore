@@ -20,5 +20,8 @@ malloc/*.o
 malloc/mdriver
 malloc/silly.rep
 
+# shell lab
+shlab/nsh
+
 # all
 *.tar

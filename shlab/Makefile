@@ -92,6 +92,9 @@ rtest15:
 rtest16:
 	$(DRIVER) -t trace16.txt -s $(TSHREF) -a $(TSHARGS)
 
+nsh: nsh.c
+	$(CC) -Wall -Werror -m64 -g nsh.c -o nsh
+# NOTE: /snap/bin/valgrind only works with "-m64".
 
 # clean up
 clean:
