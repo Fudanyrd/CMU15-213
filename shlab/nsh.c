@@ -8,9 +8,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -29,15 +29,15 @@ pid_t myfork(void);
 /** maximum length of a line*/
 const unsigned max_len = 256U;
 
-const char *first  = "nsh > ";
+const char *first = "nsh > ";
 const char *second = "... > ";
 
 /************************************************
  *             In file Token.h
  ************************************************/
 struct Token {
-  char *word_;  // single word
-  struct Token *next_;  // pointer to the next token.
+  char *word_;         // single word
+  struct Token *next_; // pointer to the next token.
 };
 /**
  * @return a pointer to a allocated token
@@ -52,18 +52,18 @@ void free_token(struct Token *head);
  *             In file Command.h
  ************************************************/
 struct Command {
-  struct Token *head_;  // head to the linked list of tokens
-  struct Token *tail_;  // tail of the linked list of tokens
-  unsigned num_token_;  // number of tokens
+  struct Token *head_; // head to the linked list of tokens
+  struct Token *tail_; // tail of the linked list of tokens
+  unsigned num_token_; // number of tokens
 };
 void init_cmd(struct Command *cmd) {
   cmd->head_ = NULL;
   cmd->tail_ = NULL;
   cmd->num_token_ = 0;
 }
-void free_cmd(struct Command *cmd) { 
+void free_cmd(struct Command *cmd) {
   if (cmd != NULL) {
-    free_token(cmd->head_); 
+    free_token(cmd->head_);
   }
 }
 /**
@@ -77,8 +77,8 @@ void parse(struct Command *cmd, FILE *in);
  ************************************************/
 /** execution meta */
 struct ExecMeta {
-  char *executable_;  // executable
-  char **argv_;  // arguments(should end with NULL)
+  char *executable_; // executable
+  char **argv_;      // arguments(should end with NULL)
 };
 /** use command to initialize a meta[out] */
 void init_exec_meta(struct ExecMeta *meta, struct Command *cmd);
@@ -95,24 +95,24 @@ int main(int argc, char **argv) {
       free_cmd(&cmd);
       break;
     }
-  
-    // start execution 
+
+    // start execution
     pid_t pid;
-    if ((pid = myfork()) == 0) {  // child process
+    if ((pid = myfork()) == 0) { // child process
       struct ExecMeta meta;
       init_exec_meta(&meta, &cmd);
       int stat = execve(meta.executable_, meta.argv_, NULL);
       if (stat < 0) {
         fprintf(stderr, "executable %s not found.\n", cmd.head_->word_);
       }
-  
+
       // end
       free_meta(&meta);
       free_cmd(&cmd);
       exit(0);
     }
     waitpid(pid, NULL, 0);
-  
+
     free_cmd(&cmd);
   }
 
@@ -143,8 +143,12 @@ struct Token *new_token(void) {
 }
 
 void free_token(struct Token *head) {
-  if (head == NULL) { return; }
-  if (head->word_ != NULL) { free(head->word_); }
+  if (head == NULL) {
+    return;
+  }
+  if (head->word_ != NULL) {
+    free(head->word_);
+  }
   free_token(head->next_);
   free(head);
 }
@@ -156,10 +160,12 @@ void free_token(struct Token *head) {
 int seek(const char *buffer, int start) {
   int end;
   switch (buffer[start]) {
-    case '\0':
-    case '\n':
-    case '\\': return -1;
-    default: break;
+  case '\0':
+  case '\n':
+  case '\\':
+    return -1;
+  default:
+    break;
   }
 
   if (buffer[start] == ' ' || buffer[start] == '\t') {
@@ -188,9 +194,9 @@ int split(const char *buffer, struct Command *cmd) {
    * WARNING:
    * You need to take care of head, tail and num_token of cmd.
    */
-  
-  int l = 0;  // iter from the left
-  int r;  // iter to the right
+
+  int l = 0; // iter from the left
+  int r;     // iter to the right
   int i;
 
   while ((r = seek(buffer, l)) != -1) {
@@ -214,10 +220,10 @@ int split(const char *buffer, struct Command *cmd) {
       word[i] = 0;
 
       // create a new node
-      if (cmd->tail_ != NULL) {  // initialized cmd
+      if (cmd->tail_ != NULL) { // initialized cmd
         cmd->tail_->next_ = new_token();
         cmd->tail_ = cmd->tail_->next_;
-      } else {  // not initialized cmd
+      } else { // not initialized cmd
         cmd->head_ = cmd->tail_ = new_token();
       }
 
@@ -237,7 +243,7 @@ int split(const char *buffer, struct Command *cmd) {
 void parse(struct Command *cmd, FILE *in) {
   init_cmd(cmd);
   char buffer[max_len];
-  
+
   printf("%s", first);
   fgets(buffer, max_len, in);
   while (split(buffer, cmd)) {
@@ -255,16 +261,19 @@ void init_exec_meta(struct ExecMeta *meta, struct Command *cmd) {
   }
   meta->executable_ = NULL;
   meta->argv_ = NULL;
-  if (cmd->num_token_ == 0) { return; }
+  if (cmd->num_token_ == 0) {
+    return;
+  }
 
   meta->executable_ = cmd->head_->word_;
 
   struct Token *iter = cmd->head_;
   int i = 0;
-  meta->argv_ = static_cast(malloc(sizeof(char *) * (cmd->num_token_ + 1)), char **);
+  meta->argv_ =
+      static_cast(malloc(sizeof(char *) * (cmd->num_token_ + 1)), char **);
   while (iter != NULL) {
     meta->argv_[i++] = iter->word_;
-    iter = iter->next_; 
+    iter = iter->next_;
   }
 
   meta->argv_[i] = NULL;
