@@ -20,13 +20,18 @@ Textbook *Computer System: A Programmer's Perspective*(a.k.a *csapp*)
     <td> 😇😇😇 </td>
   </tr>
   <tr>
-    <td>Lab 5: Cache</td>
+    <td>Lab 7: Cache</td>
     <td> 70% </td>
     <td> C, cache basic </td>
     <td> 😇😇😇😇😇</td>
   </tr>
   <tr>
-    <td>Lab 5: Malloc</td>
+    <td>Lab 9: Shell</td>
+    <td> 0% </td>
+    <td> C, Process </td>
+    <td> 😇😇😇😇😇</td>
+  <tr>
+    <td>Lab 10: Malloc</td>
     <td> 84% </td>
     <td> C, virtual memory</td>
     <td> 😇😇😇😇😇😇😇</td>

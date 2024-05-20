@@ -19,3 +19,6 @@ cache/*.o
 malloc/*.o
 malloc/mdriver
 malloc/silly.rep
+
+# all
+*.tar
