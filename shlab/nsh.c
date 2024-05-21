@@ -85,6 +85,32 @@ void init_exec_meta(struct ExecMeta *meta, struct Command *cmd);
 /** free the meta */
 void free_meta(struct ExecMeta *meta) { free(meta->argv_); }
 
+/************************************************
+ *              In file String.h
+ ************************************************/
+struct String {
+  char *dat_;        // the actuall line.
+  unsigned int len_; // number of chars in the line(including ending '\0')
+  unsigned int vol_; // current allocated space of the line
+};
+void init_str(struct String *s) {
+  s->dat_ = NULL;
+  s->len_ = s->vol_ =  0;
+}
+/**
+ * @brief read line from a input stream.
+ * @param line[out] the line from input.
+ * @param in the input stream
+ */
+void get_line(struct String *line, FILE *in);
+
+/**
+ * @brief put a character to the back of a string
+ * @return 0 if succeeded.
+ */
+int str_push_back(struct String *s, char ch);
+void free_str(struct String *s) { free(s->dat_); }
+
 int main(int argc, char **argv) {
   struct Command cmd;
 
@@ -203,7 +229,6 @@ int split(const char *buffer, struct Command *cmd) {
 #ifdef DEBUG
     // check overflow issues
     assert(r > l);
-    assert(r < max_len);
 #endif
     // create tokens or not?
     if (buffer[l] != ' ' && buffer[l] != '\t') {
@@ -242,15 +267,17 @@ int split(const char *buffer, struct Command *cmd) {
 
 void parse(struct Command *cmd, FILE *in) {
   init_cmd(cmd);
-  char buffer[max_len];
+  struct String line;
+  init_str(&line);
 
   printf("%s", first);
-  fgets(buffer, max_len, in);
-  while (split(buffer, cmd)) {
+  get_line(&line, in);
+  while (split(line.dat_, cmd)) {
     printf("%s", second);
-    fgets(buffer, max_len, in);
+    get_line(&line, in);
   }
 
+  free_str(&line);
   return;
 }
 
@@ -277,4 +304,57 @@ void init_exec_meta(struct ExecMeta *meta, struct Command *cmd) {
   }
 
   meta->argv_[i] = NULL;
+}
+
+int str_push_back(struct String *s, char ch) {
+  if (s == NULL) {
+    return -1;
+  }
+
+  if (s->len_ < s->vol_) {
+    s->dat_[s->len_] = ch;
+    s->len_++;
+    return 0;
+  }
+  // else s->len_ == s->vol_
+  s->vol_ = s->vol_ << 1;
+  s->dat_ = static_cast(
+      realloc(s->dat_, s->vol_ == 0 ? 4U : sizeof(char) * s->vol_), char *);
+  if (s->dat_ == NULL) { // oops, fail
+    return -1;
+  }
+  s->dat_[s->len_] = ch;
+  s->len_++;
+  return 0;
+}
+
+void get_line(struct String *line, FILE *in) {
+  if (line == NULL) {
+    fprintf(stderr, "Invalid argument to line: line is null\n");
+    return;
+  }
+
+  if (line->dat_ != NULL) {
+    free(line->dat_);
+    init_str(line);
+  }
+  line->dat_ = static_cast(malloc(sizeof(char) * 4), char *);
+  line->len_ = 0;
+  line->vol_ = 4;
+
+  char ch;
+  while ((ch = fgetc(in)) != '\n') {
+    if (str_push_back(line, ch) != 0) {
+      fprintf(stderr, "str push back failure, abort");
+      exit(0);
+    }
+  }
+  if (str_push_back(line, '\n') != 0) {
+    fprintf(stderr, "str push back failure, abort");
+    exit(0);
+  }
+  if (str_push_back(line, '\0') != 0) {
+    fprintf(stderr, "str push back failure, abort");
+    exit(0);
+  }
 }
