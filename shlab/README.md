@@ -129,3 +129,42 @@ unsigned int sleep(unsigned int secs);
 // hang until receive a signal
 int pause(void);
 ```
+
+## getpgrp
+```c
+#include <unistd.h>
+
+// return process group id
+pid_t gepgrp(void);
+```
+
+## setpgrg
+Set the process group id of process `pid` to be `pgid`.
+```c
+#include <unistd.h>
+
+// return 0 if success
+int setpgid(pid_t pid, pid_t pgid);
+```
+
+## kill
+Don't be confused by its name! It's used to send signal to other processes(including themselves).
+```c
+#include <sys/types.h>
+#include <signal.h>
+
+int kill(pid_t pid, int sig);
+```
+
+## signal
+Used for receiving signals.
+```c
+#include <signal.h>
+typedef void (* sighandler_t)(int);
+
+sighandler_t signal(int signum, sighandler_t handler);
+```
+* If `handler` is `SIG_IGN`, then signal `signum` will be ignored.
+* If `handler` is `SIG_DFL`, then will do default behavior.
+* If `handler` is `SIG_ERR`, oops, fail.
+* Else return user defined handler `handler`.
