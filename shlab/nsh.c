@@ -24,6 +24,9 @@
  */
 pid_t myfork(void);
 
+volatile sig_atomic_t flag;
+volatile sig_atomic_t pid_glb;
+
 #define N 5
 
 /** maximum length of a line*/
@@ -95,7 +98,7 @@ struct String {
 };
 void init_str(struct String *s) {
   s->dat_ = NULL;
-  s->len_ = s->vol_ =  0;
+  s->len_ = s->vol_ = 0;
 }
 /**
  * @brief read line from a input stream.
@@ -111,8 +114,24 @@ void get_line(struct String *line, FILE *in);
 int str_push_back(struct String *s, char ch);
 void free_str(struct String *s) { free(s->dat_); }
 
+/**
+ * signal handlers
+ */
+void sigchld_handler(int s) {
+  int oldflag = flag;
+  pid_glb = waitpid(-1, NULL, 0);
+  flag = oldflag;
+}
+void sigint_handler(int s) {}
+
 int main(int argc, char **argv) {
   struct Command cmd;
+  sigset_t mask;
+  sigset_t prev;
+  signal(SIGCHLD, sigchld_handler);
+  signal(SIGINT, sigint_handler);
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGCHLD);
 
   while (1) {
     init_cmd(&cmd);
@@ -121,6 +140,7 @@ int main(int argc, char **argv) {
       free_cmd(&cmd);
       break;
     }
+    sigprocmask(SIG_BLOCK, &mask, &prev);
 
     // start execution
     pid_t pid;
@@ -137,7 +157,10 @@ int main(int argc, char **argv) {
       free_cmd(&cmd);
       exit(0);
     }
-    waitpid(pid, NULL, 0);
+    pid_glb = 0;
+    sigprocmask(SIG_SETMASK, &prev, NULL);
+    while (pid_glb == 0) {
+    }
 
     free_cmd(&cmd);
   }

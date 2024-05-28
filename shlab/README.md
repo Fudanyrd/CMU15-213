@@ -168,3 +168,30 @@ sighandler_t signal(int signum, sighandler_t handler);
 * If `handler` is `SIG_DFL`, then will do default behavior.
 * If `handler` is `SIG_ERR`, oops, fail.
 * Else return user defined handler `handler`.
+
+## masking
+```c
+#include <signal.h>
+/** return 0 if succeed, -1 if abnormal */
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset); 
+int sigemptyset(sigset_t *set); 
+int sigfillset(sigset_t *set); 
+int sigaddset(sigset_t *set, int signum); 
+int sigdelset(sigset_t *set, int signum); 
+
+/* return 1 if signum is a member of set
+ * return 0 if not, -1 if abnormal 
+ * */
+int sigismember(const sigset_t *set, int signum); 
+```
+`how` can be `SIG_BLOCK`, `SIG_UNBLOCK` , `SIG_SETMASK`. Example:
+```c
+  sigset_t mask, prev_mask; 
+  sigemptyset(&mask); 
+  sigaddset(&mask, SIGINT); 
+  /* Block SIGINT and save previous blocked set */ 
+  sigprocmask(SIG_BLOCK, &mask, &prev_mask); 
+  // will not be interrupted by SIGINT here.
+  /* Restore previous blocked set, unblocking SIGINT */ 
+  sigprocmask(SIG_SETMASK, &prev_mask, NULL); 
+```
