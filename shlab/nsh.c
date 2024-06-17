@@ -122,7 +122,10 @@ void sigchld_handler(int s) {
   pid_glb = waitpid(-1, NULL, 0);
   flag = oldflag;
 }
-void sigint_handler(int s) {}
+void sigint_handler(int s) {
+  // write is signal-safe.
+  write(STDOUT_FILENO, "\n", 1);
+}
 
 int main(int argc, char **argv) {
   struct Command cmd;
@@ -136,6 +139,9 @@ int main(int argc, char **argv) {
   while (1) {
     init_cmd(&cmd);
     parse(&cmd, stdin);
+    if (cmd.head_ == NULL) {
+      continue;
+    }
     if (strcmp(cmd.head_->word_, "exit") == 0) {
       free_cmd(&cmd);
       break;
