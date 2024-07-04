@@ -1,5 +1,6 @@
 # Signal Cheatsheet 
-This covers some(a lot of) useful system calls/ functions related to signals.
+This covers most contents in chapter 9, 10 of csapp.
+
 ## getpid
 ```c
 #include <sys/types.h>
@@ -29,8 +30,7 @@ if ((pid = fork()) == 0) {
 ## execve
 ```c
 #include <unistd.h>
-int execve(const char *filename, const char **argv,
-           const char *envp);
+int execve(const char *filename, const char **argv, const char **envp);
 ```
 Returns -1 if executable not found.
 
@@ -54,6 +54,26 @@ Here's how to set `pid`.
   <tr> 
     <td>-1</td>
     <td>wait for any of its child process to finish</td>
+  </tr>
+</table>
+
+Here's how to set `options`
+<table>
+  <tr>
+    <td>0</td>
+    <td>Default behavior: suspend execution util a child terminates</td>
+  </tr>
+  <tr>
+    <td>WNOHANG</td>
+    <td>return immediately if non terminated yet</td>
+  </tr>
+  <tr>
+    <td>WUNTRACED</td>
+    <td>suspend execution until one process become terminated or stopped </td>
+  </tr>
+  <tr>
+    <td>WCONTINUED</td>
+    <td>suspend execution until one process become terminated or received SIGCONT</td>
   </tr>
 </table>
 
@@ -148,22 +168,43 @@ int sigfillset(sigset_t *set);
 int sigaddset(sigset_t *set, int signum); 
 int sigdelset(sigset_t *set, int signum); 
 
-/* return 1 if signum is a member of set
+/**
+ * return 1 if signum is a member of set
  * return 0 if not, -1 if abnormal 
- * */
+ */
 int sigismember(const sigset_t *set, int signum); 
 ```
-`how` can be `SIG_BLOCK`, `SIG_UNBLOCK` , `SIG_SETMASK`. Example:
-```c
-  sigset_t mask, prev_mask; 
-  sigemptyset(&mask); 
-  sigaddset(&mask, SIGINT); 
-  /* Block SIGINT and save previous blocked set */ 
-  sigprocmask(SIG_BLOCK, &mask, &prev_mask); 
-  // will not be interrupted by SIGINT here.
-  /* Restore previous blocked set, unblocking SIGINT */ 
-  sigprocmask(SIG_SETMASK, &prev_mask, NULL); 
-```
+`how` can be one of the three:
+<table>
+  <tr>
+    <td>SIG_BLOCK</td>
+    <td>blocked = blocked | set</td>
+  </tr>
+  <tr>
+    <td>SIG_UNBLOCK</td>
+    <td>blocked = blocked & ~set</td>
+  </tr>
+  <tr>
+    <td>SIG_SETMASK</td>
+    <td>blocked = set</td>
+  </tr>
+</table>
+
+## List of Signals
+<table>
+  <tr>
+    <td>SIGINT</td>
+    <td>Interrupt from keyboard</td>
+  </tr>
+  <tr>
+    <td>SIGKILL</td>
+    <td>Kill program</td>
+  </tr>
+  <tr>
+    <td>SIGSEGV</td>
+    <td>Invalid memory access</td>
+  </tr>
+</table>
 
 # IO Cheatsheet
 This section covers syscalls discussed in **Chapter 11**.
@@ -229,3 +270,66 @@ ssize_t read(int fd, void *buf, size_t n);
 /** return number of bytes write, 0 if EOF, -1 if failure. */
 ssize_t write(int fd, const void *buf, size_t n);
 ```
+
+## Read Metadata of Files
+```c
+#include <unistd.h>
+#include <sys/stat.h>
+
+/**< returns -1 on error */
+int stat(const char *filename, struct stat *st);
+int fstat(int fd, struct stat *st);
+```
+
+The `struct stat` looks like: 
+```c
+/**< metadata returned by the stat and fstat */
+struct stat {
+  dev_t         st_dev;      // device
+  ino_t         st_ino;      // inode
+  mode_t        st_mode;     // protection, file type
+  nlink_t       st_nlink;    // number of hard links
+  uid_t         st_uid;      // user id of owner
+  gid_t         st_gid;      // group id of owner
+  dev_t         st_rdev;     // device type(if inode device)
+  off_t         st_size;     // total size in bytes
+  unsigned long st_blksize;  // Block size for fs IO
+  unsigned long st_blocks;   // Number of blocks allocated
+  time_t        st_atime;    // time of last access
+  time_t        st_mtime;    // time of last modification
+  time_t        st_ctime;    // time of last change
+};
+```
+We're interested in `st_mode` and `st_size` when building our web server.
+
+## Read Directory
+User programs can open, read, close a directory:
+```c
+#include <sys/types.h>
+#include <dirent.h>
+/**< returns NULL on error */
+DIR *opendir(const char *fname);
+/**< returns -1 on error */
+int closedir(DIR *dir);
+/**< returns NULL if no more files or error */
+struct dirent *readdir(DIR *dirp);
+```
+
+And `struct dirent` is like:
+```c
+struct dirent {
+  ino_t d_ino;        // inode number
+  char  d_name[256];  // file name
+}
+```
+
+## IO Redirection
+```c
+/**< return -1 on error */
+int dup2(int oldfd, int newfd);
+```
+
+From the textbook, 
+> The dup2 function copies descriptor table entry oldfd to descriptor table entfy 
+> newfd, overwriting the previous contents of descriptor table entrynewfd. If newfd 
+> was already open, then dup2 closes newfd before it copies oldfd. 

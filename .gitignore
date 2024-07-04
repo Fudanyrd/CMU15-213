@@ -25,3 +25,10 @@ shlab/nsh
 
 # all
 *.tar
+
+# small experiments
+tmp*.c
+eg*.c
+
+# for trying programs on csapp 
+range
