@@ -1,5 +1,8 @@
 # This is solution to labs of CMU15-213
 CMU15-213 is an excellent course on *Introduction to Computer System*.  
+[cheatsheet](./shlab/cheatsheet.md) covers important methods mentioned in the textbook;
+[csapp.h](./csapp.h) and [csapp.c](./csapp.c) is a toy c package which add **error handling** in system utilities.
+
 ## Course info
 [website](http://csapp.cs.cmu.edu/)
 [labs](http://csapp.cs.cmu.edu/3e/labs.html)

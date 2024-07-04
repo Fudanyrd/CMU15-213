@@ -184,3 +184,44 @@ file_des_t Dup2(file_des_t oldfd, file_des_t newfd) {
 
   return ret;
 }
+
+sock_des_t Socket(int domain, int type, int protocol) {
+  sock_des_t ret = socket(domain, type, protocol);
+  assert(ret != -1);
+  return ret;
+}
+void Connect(sock_des_t clientfd, const struct sockaddr *addr,
+            socklen_t addrlen) {
+  int ret = connect(clientfd, addr, addrlen);
+  assert(ret >= 0);
+}
+
+int Bind(int sockfd, struct sockaddr *addr, socklen_t addrlen) {
+  int ret = bind(sockfd, addr, addrlen);
+  assert(ret != -1);
+  return ret;
+}
+int Listen(int sockfd, int backlog) {
+  int ret = listen(sockfd, backlog);
+  assert(ret != -1);
+  return ret;
+}
+sock_des_t Accept(int listenfd, struct sockaddr *addr, socklen_t *addrlen) {
+  int ret = accept(listenfd, addr, addrlen);
+  assert(ret != -1);
+  return ret;
+}
+
+void Getaddrinfo(const char *node, const char *service,
+                const struct addrinfo *hints,
+                struct addrinfo **res) {
+
+  int ret = getaddrinfo(node, service, hints, res);
+  assert (ret == 0);
+}
+void Getnameinfo(const struct sockaddr *sa, socklen_t salen,
+                char *host, size_t host_len,
+                char *service, size_t servlen, int flags) {
+  int ret = getnameinfo(sa, salen, host, host_len, service, servlen, flags);                  
+  assert (ret == 0);
+}

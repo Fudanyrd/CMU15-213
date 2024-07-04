@@ -1,5 +1,5 @@
 # Signal Cheatsheet 
-This covers most contents in chapter 9, 10 of csapp.
+This covers most contents in chapter 9 of csapp.
 
 ## getpid
 ```c
@@ -207,7 +207,7 @@ int sigismember(const sigset_t *set, int signum);
 </table>
 
 # IO Cheatsheet
-This section covers syscalls discussed in **Chapter 11**.
+This covers most contents in chapter 10 of csapp.
 
 ## File Descriptor
 ```c
@@ -333,3 +333,152 @@ From the textbook,
 > The dup2 function copies descriptor table entry oldfd to descriptor table entfy 
 > newfd, overwriting the previous contents of descriptor table entrynewfd. If newfd 
 > was already open, then dup2 closes newfd before it copies oldfd. 
+
+# Networking Cheatsheet
+This covers most contents in chapter 11 of csapp.
+
+## IP Address
+Ip address is a 32-bit unsigned integer:
+```c
+/**< here "in" stands for internet */
+struct in_addr {
+  uint32_t s_addr;
+};
+```
+
+`htonl` converts 32-bit host byte order to network byte order, and `ntohl` do the opposite:
+```c
+#include <arpa/inet.h>
+
+uint32_t htonl(uint32_t hostlong);
+uint16_t htons(uint16_t hostshort);
+
+uint32_t ntohl(uint32_t netlong);
+uint16_t ntohs(uint16_t netshort);
+```
+
+## Socket Interface
+```c
+/**< IP socket address structure */
+struct sockaddr_in {
+  uint16_t       sin_family;  // protocol family
+  uint16_t       sin_port;    // port number in network byte order
+  struct in_addr sin_addr;    // IP address in network byte order
+  unsigned char  sin_zero[8]; // Pad to sizeof(struct sockaddr)
+};
+
+/**< Generic socket address structure */
+struct sockaddr {
+  uint16_t sa_family;    // protocol family
+  char     sa_data[14];  // Address data
+};
+```
+
+Some useful methods:
+```c
+#include <sys/types.h>
+#include <sys/socket.h>
+
+/**< create a socket descriptor, return -1 on err */
+int socket(int domain, int type, int protocol);
+```
+`domain` is `AF_INET` if we're using 32-bit IP address;  `type` may be `SOCK_STREAM`, `protocol` may be 0.
+Note that the descriptor returned by this method is half-opened and cannot be used for reading/writing.
+
+```c
+/**< client method, return -1 on error. */
+int connect(int clientfd, const struct sockaddr *addr, socklen_t addrlen);
+```
+Client side try to make a connection to the server.
+
+> Bind, listen and accept method is used in server side.
+
+```c
+/**< returns -1 on error */
+int bind(int sockfd, struct sockaddr *addr, socklen_t addrlen);
+```
+Bind method asks the kernel to associate the server socket address with the socket descriptor `sockfd`.
+The `addrlen` is `sizeof(sockaddr_in)`.
+
+```c
+/**< returns -1 on error */
+int listen(int sockfd, int backlog);
+```
+The listen function converts `sockfd` from air active socket to a listening socket 
+that can accept connection requests from clients. We typically set `backlog` to a large value
+(e.g. 1024).
+
+```c
+/**< returns active connected descriptor, -1 on error */
+int accept(int listenfd, struct sockaddr *addr, int *addrlen);
+```
+The accept function waits for a connection request from a client to arrive on 
+the listening descriptor listened, then fills in the client's socket address in `addr`.
+and returns a connected discriptor that can be used to communicate with the 
+client using Unix I/O functions.
+
+> Host and service conversion
+
+```c
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+/**< addr info used by getaddrinfo */
+struct addrinfo {
+  int              ai_flags;     // hints argument flags
+  int              ai_family;    // first arg to socket func
+  int              ai_socktype;  // second arg to socket func
+  int              ai_protocol;  // third arg to socket
+  char            *ai_cannoname; // canonical hostname
+  size_t           ai_addrlen;   // sizeof ai_addr struct
+  struct sockaddr *ai_addr;      // ptr to socket address struct
+  struct addrinfo *ai_next;      // ptr to next item in linked list.
+};
+/**
+ * AI_ADDRCONFIG: recommended if using connections, ask getaddrinfo to return IPv4 address only
+ * AI_CANONNAME:  instructs getaddrinfo to point the ai_cannoame field in the first addrinfo struct
+ * AI_NUMERICSERV: forces the service argument to be a port number
+ * AI_PASSIVE: return socket addresses that can be used by servers as listening sockets
+ */
+```
+`ai_flags` have two options: `AF_INET` or `AF_INET6`.
+
+```c
+/**
+ * @brief converts string representa_tions of hostnames, host addresses, 
+ * service names, and port numbers into socket address structure.
+ * 
+ * @param node domain names like <github.com>, do not include http(s).
+ * @param service service name, can be nullptr.
+ * @param hints specifies criteria for selecting the socket address 
+ * structures returned in the list pointed to by res
+ * @param[out] res point to start of output linked list
+ * @return 0 if success
+ */
+int getaddrinfo(const char *node, const char *service,
+                const struct addrinfo *hints,
+                struct addrinfo **res);
+/**
+ * @brief inverse of Getaddrinfo
+ * 
+ * @param sa sockaddr in addrinfo structs
+ * @param salen ai_addrlen in addrinfo structs
+ * @param[out] host output buffer for domain name 
+ * @param host_len output buffer size(in bytes) for domain name
+ * @param[out] service output buffer service name
+ * @param servlen output buffer size(in bytes) for service name
+ * @param flags NI_NUMERICHOST if numeric address string(eg. 127.0.0.1) is needed, 
+ * NI_NUMERICSERV if port number is needed
+ * @return 0 if success
+ */
+int getnameinfo(const struct sockaddr *sa, socklen_t salen,
+                char *host, size_t host_len,
+                char *service, size_t servlen, int flags);
+/**< returns nothing */
+void freeaddrinfo(struct addrinfo *res);
+/**< returns error message */
+const char *gai_strerror(int errcode);
+```
+
+> Don't get confused by these functions! They are powerful at the very least.
