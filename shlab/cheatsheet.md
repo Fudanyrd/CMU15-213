@@ -482,3 +482,49 @@ const char *gai_strerror(int errcode);
 ```
 
 > Don't get confused by these functions! They are powerful at the very least.
+
+# Thread Cheatsheet
+
+## Create a Thread
+`Pthread` is the thread library to use.
+```c
+#include <pthread.h>
+
+/**
+ * @param[out] thread thread id of created thread
+ * @param attr set to NULL for default behavior
+ * @param fn function to execute
+ * @param arg argument to the function
+ * @return 0 on success 
+ */
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                   void *(* fn) (void *), void *arg);
+```
+
+`pthread_self` return the id of a thread:
+```c
+pthread_t pthread_self();
+```
+
+`pthread_join` suspend execution of calling thread until the targeted thread terminates. 
+```c
+/**< return 0 on success */
+int pthread_join(pthread_t tid, void **thread_return);
+```
+
+`pthread_detach` makes memory leak impossible even if you do not explicitly free the memory 
+used by a thread.
+```c
+int pthread_detach(pthread_t tid);
+```
+
+Locks solves a lot of concurrency problems, you should know these:
+```c
+/**< return 0 if OK */
+/**< initialize the mutex, set attr to NULL for default behavior */
+int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
+/**< acquire the mutex */
+int pthread_mutex_lock(pthread_mutex_t *mutex);
+/**< release the mutex */
+int pthread_mutex_unlock(pthread_mutex_t *mutex);
+```

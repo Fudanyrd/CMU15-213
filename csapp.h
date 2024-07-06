@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -33,6 +34,7 @@
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
 #endif // STDIN_FILENO
+/**< THESE ARE FOR YOU TO LOOKUP, BUT IDEALLY YOU SHOULD REMEMBER THEM */
 
 /**< second argument to listen */
 #define LISTENQ 1024
@@ -116,9 +118,29 @@ sighandler_t Signal(int signum, sighandler_t handler);
 
 //-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
-// Robust IO Utility(NOT TESTED, USE WITH CAUTION)
+// Robust IO Utility(Can be used on binary datastream)
 //
 //-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/**<  EXAMPLE USAGE(A SIMPLE PARROT PROGRAM):
+#include "csapp.h"
+
+int main(int argc, char **argv) {
+  rio_t riob;
+  rio_readinitb(&riob, 0);
+  char buf[RIO_BUFSIZE];
+
+  ssize_t nread;
+  while (1) {
+    nread = Rio_readlineb(&riob, buf, RIO_BUFSIZE);
+    if (nread == 0) {
+      break;  // early EOF
+    }
+    Rio_writen(STDOUT_FILENO, buf, nread);
+  }
+
+  return 0;
+}
+*/
 
 /**< wrapper of stats */
 void Stat(const char *filename, struct stat *st);
@@ -153,7 +175,7 @@ ssize_t Rio_read(rio_t *rp, char *usrbuf, size_t n);
 ssize_t rio_readnb(rio_t *rp, void *usrbuf, size_t n);
 /**< rio_readnb with error-handling */
 ssize_t Rio_readnb(rio_t *rp, void *usrbuf, size_t n);
-/**< read from rio until '\n' is met(copied to usrbuf) */
+/**< read from rio until '\n' is met('\n' is copied to usrbuf) */
 ssize_t rio_readlineb(rio_t *rp, void *usrbuf, size_t maxlen);
 /**< rio_readlineb with error handling */
 ssize_t Rio_readlineb(rio_t *rp, void *usrbuf, size_t maxlen);
@@ -303,5 +325,38 @@ sock_des_t open_clientfd(char *hostname, char *port);
  * -1 on error
  */
 sock_des_t open_listenfd(char *port);
+
+//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//
+// Concurrency Utility, compile with "-pthread" flag.
+//
+//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+/**
+ * Wrapper of pthread_create
+ * @param[out] thread thread id of created thread
+ * @param attr set to NULL for default behavior
+ * @param fn function to execute
+ * @param arg argument to the function
+ * @return 0 on success 
+ */
+int Pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                   void *(* fn) (void *), void *arg);
+
+/**< return the thread-id of itself */
+pthread_t pthread_self();
+/**< wrapper of pthread_join */
+int Pthread_join(pthread_t tid, void **thread_return);
+/**< detach a joinable thread */
+int Pthread_detach(pthread_t tid);
+/**< wait for all threads to terminate */
+void pthread_exit(void *thread_return);
+
+/**< initialize the mutex, set attr to NULL for default behavior */
+int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
+/**< acquire the mutex */
+int pthread_mutex_lock(pthread_mutex_t *mutex);
+/**< release the mutex */
+int pthread_mutex_unlock(pthread_mutex_t *mutex);
 
 #endif // CSAPP_H

@@ -592,3 +592,21 @@ sock_des_t open_listenfd(char *port) {
   
   return listenfd;
 }
+
+int Pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                  void *(* fn) (void *), void *arg) {
+  
+  int ret = pthread_create(thread, attr, fn, arg);
+  assert (ret == 0);
+  return ret;
+}
+int Pthread_join(pthread_t tid, void **thread_return) {
+  int ret = pthread_join(tid, thread_return);
+  assert (ret == 0);
+  return ret;
+}
+int Pthread_detach(pthread_t tid) {
+  int ret = pthread_detach (tid);
+  assert (ret == 0);
+  return ret;
+}
